@@ -1,121 +1,115 @@
-# rag-from-scratch 🔍
+<div align="center">
+<h1>tiny-rag</h1>
+<p><strong>RAG without the magic.</strong><br>No LangChain. No vector DB. Just Python you can actually read.</p>
+<img src="https://img.shields.io/badge/Python-3.10+-blue?logo=python" alt="Python">
+<img src="https://img.shields.io/badge/License-MIT-green" alt="License">
+<img src="https://img.shields.io/badge/Ollama-local-black" alt="Ollama">
+<img src="https://img.shields.io/badge/HuggingFace-free-yellow" alt="HuggingFace">
+<img src="https://img.shields.io/badge/Cohere-free_tier-purple" alt="Cohere">
+</div>
 
-> RAG without the magic. No LangChain. No vector DB. Just Python you can actually read.
-
-Retrieval-Augmented Generation explained in **~50 lines per file** — pick your provider and go.
+---
 
 ```bash
 python rag50_ollama.py --file sample.txt --query "What is the return policy?"
-# 📄 Loading & chunking document …
-# 🔢 Embedding 12 chunks …
-# 🔍 Retrieving relevant context …
-# 💬 Generating answer …
-#
-# Q: What is the return policy?
-# A: Customers may return any unused item within 30 days of purchase for a full refund.
 ```
 
----
+Output:
+```
+Loading and chunking document
+Embedding 12 chunks
+Retrieving relevant context
+Generating answer
+
+Q: What is the return policy?
+A: You can return any unused item within 30 days of purchase for a full refund. Items must be in original packaging with all tags attached. Digital products and perishables are non-refundable.
+```
 
 ## Why this exists
 
-Most RAG tutorials hide the hard parts behind framework abstractions.  
-This repo shows **every step raw** — chunking, embedding, cosine similarity,
-context stuffing — in plain Python you can read top to bottom in 5 minutes.
+Most RAG tutorials bury the concept under hundreds of lines of framework glue. This repo shows every step raw in about 50 lines per file. How chunking works, what embeddings really are (just arrays of floats), why cosine similarity is only 3 lines of numpy, and how context stuffing grounds LLM answers. Read it top to bottom in 5 minutes and you will understand RAG completely.
+
+## Architecture
+
+```
+your_doc.txt
+     |
+     v
+load_chunks()        splits into overlapping word windows
+     |
+     v
+embed()              converts text to float vectors
+     |
+     v
+[vectors in RAM]------------------------+
+                                        |
+user query                              |
+     |                                  |
+     v                                  v
+embed(query) -> cosine_similarity() -> retrieve() -> generate() -> answer
+```
+
+5 functions. 1 file. 3 providers. Same pipeline every time.
 
 ## Choose your provider
 
-| Feature              | Ollama            | HuggingFace             | Cohere              |
-| :------------------- | :---------------- | :---------------------- | :------------------ |
-| **Cost**             | 100% Free         | Free Tier               | Free Tier           |
-| **API Key Needed**   | ❌ No             | ✅ Yes (HF Token)       | ✅ Yes (Cohere Key) |
-| **Runs Locally**     | ✅ Fully local    | ⚡ Embeddings only      | ❌ Cloud only       |
-| **Setup Difficulty** | Medium            | Medium                  | Easiest             |
-| **Best For**         | Privacy & offline | Local embedding control | Quick prototyping   |
+| Feature | Ollama | HuggingFace | Cohere |
+| :--- | :--- | :--- | :--- |
+| **Cost** | 100% Free | Free Tier | Free Tier |
+| **API Key** | Not needed | Required | Required |
+| **Runs Locally** | Fully local | Embeddings only | Cloud only |
+| **Internet** | Not needed | For generation | Yes |
+| **Setup** | Medium | Medium | Easiest |
+| **Best for** | Privacy and offline | Local embedding control | Quick prototyping |
 
-**Not sure which to pick?**
+Not sure which to pick? No API key and want full privacy use Ollama. Want local embeddings and okay with a free key use HuggingFace. Just want it running in under 2 minutes use Cohere.
 
-- No API key, want full privacy → **Ollama**
-- Want local embeddings, okay with a free key → **HuggingFace**
-- Just want it running in 2 minutes → **Cohere**
+## Live Examples
 
----
+### Direct fact retrieval
 
-## How it works (same pipeline, 3 providers)
-
-```
-your_doc.txt  →  load_chunks()  →  embed()  →  [vectors in RAM]
-                                                      ↑
-user query    →  embed()  →  cosine_similarity()  →  retrieve()  →  generate()  →  answer
-```
-
-Every file implements the same 5 steps:
-
-1. **Load & Chunk** — split document into overlapping word windows
-2. **Embed** — convert chunks to vectors via your chosen provider
-3. **Cosine Similarity** — manual numpy (no sklearn magic)
-4. **Retrieve** — rank chunks, return top-k
-5. **Generate** — stuff context into prompt, get grounded answer
-
----
-
-## 🧪 Live Example — See RAG in Action
-
-Using the included `sample.txt` (Acme Store policy document):
-
-### Query 1 — Direct fact retrieval
 ```bash
 python rag50_ollama.py --file sample.txt --query "What is the return policy?"
 ```
-```
-📄 Loading & chunking document …
-🔢 Embedding 12 chunks …
-🔍 Retrieving relevant context …
-💬 Generating answer …
 
-Q: What is the return policy?
-A: You can return any unused item within 30 days of purchase for a full 
-   refund. Items must be in original packaging with all tags attached. 
-   Digital products and perishables are non-refundable.
+```
+A: You can return any unused item within 30 days for a full refund.
 ```
 
-### Query 2 — Multi-fact reasoning
+### Multi-fact reasoning
+
 ```bash
 python rag50_ollama.py --file sample.txt --query "How do I reach Gold status and what do I get?"
 ```
+
 ```
-Q: How do I reach Gold status and what do I get?
-A: Gold status is unlocked at 500 loyalty points (earned at $1 per point 
-   spent). Benefits include free expedited shipping on all orders.
+A: Gold status requires 500 loyalty points. Benefits include free expedited shipping on all orders.
 ```
 
-### Query 3 — Hallucination guard (the important one)
+### ⭐ Hallucination guard
+
 ```bash
 python rag50_ollama.py --file sample.txt --query "Do you offer student discounts?"
 ```
+
 ```
-Q: Do you offer student discounts?
 A: I don't know.
 ```
 
-> ☝️ **This is RAG working correctly.** The document doesn't mention 
-> student discounts, so the model refuses to guess. 
-> This is the core superpower of RAG over plain LLM prompting.
-
----
+The model refuses to guess when the answer is not in the document. This is what makes RAG safer than vanilla LLM prompting.
 
 ## Quick Start
 
-### Ollama (local, no API key)
+### Ollama
 
 ```bash
 ollama pull nomic-embed-text && ollama pull llama3.2
-ollama serve   # separate terminal
+ollama serve
 pip install ollama numpy
 python rag50_ollama.py --file sample.txt --query "What is the return policy?"
 ```
 
-### HuggingFace (free tier)
+### HuggingFace
 
 ```bash
 pip install sentence-transformers huggingface-hub numpy
@@ -123,7 +117,7 @@ export HF_TOKEN="hf_your_token"
 python rag50_huggingface.py --file sample.txt --query "What is the return policy?"
 ```
 
-### Cohere (easiest)
+### Cohere
 
 ```bash
 pip install cohere numpy
@@ -131,113 +125,114 @@ export COHERE_API_KEY="your_key"
 python rag50_cohere.py --file sample.txt --query "What is the return policy?"
 ```
 
----
-
-## 🦙 Setting Up Ollama (Step by Step)
+## Ollama Setup Full Guide
 
 ### macOS
-```bash
-# Option 1 — Direct download
-# Visit https://ollama.com/download and download the macOS app
 
-# Option 2 — Homebrew
+```bash
 brew install ollama
 ```
 
+Or download from https://ollama.com/download
+
 ### Linux
+
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
 ```
 
 ### Windows
-```
-Visit https://ollama.com/download
-Download and run the OllamaSetup.exe installer
-```
 
-### After install — pull the models
+Download OllamaSetup.exe from https://ollama.com/download and run it.
+
+### Pull models and verify
+
 ```bash
-# Pull embedding model (~274 MB)
 ollama pull nomic-embed-text
-
-# Pull LLM (~2 GB — grab a coffee)
 ollama pull llama3.2
-
-# Verify both are ready
 ollama list
-
-# Start the server (keep this terminal open)
 ollama serve
 ```
 
-> **Note:** `ollama serve` must be running in the background whenever 
-> you run the script. On macOS, the desktop app handles this automatically.
+> macOS desktop app users do not need to run `ollama serve` manually.
 
----
+## HuggingFace Token Full Guide
 
-## 🤗 Getting Your HuggingFace Token
-
-1. Go to https://huggingface.co/join and create a free account
-2. Visit https://huggingface.co/settings/tokens
-3. Click **"New token"** → name it anything → Role: **Read** → **Generate**
-4. Copy the token (starts with `hf_`)
+1. Create a free account at https://huggingface.co/join
+2. Go to https://huggingface.co/settings/tokens
+3. Click **New token**, any name, Role **Read**, click **Generate**
+4. Copy the token — it starts with `hf_`
 
 ```bash
-# Mac/Linux — add to current session
+# Mac/Linux
 export HF_TOKEN="hf_your_token_here"
 
-# Mac/Linux — make it permanent (add to ~/.bashrc or ~/.zshrc)
-echo 'export HF_TOKEN="hf_your_token_here"' >> ~/.zshrc
-source ~/.zshrc
+# Mac/Linux — permanent
+echo 'export HF_TOKEN="hf_your_token_here"' >> ~/.zshrc && source ~/.zshrc
 
 # Windows (Command Prompt)
-set HF_TOKEN="hf_your_token_here"
+set HF_TOKEN=hf_your_token_here
 
 # Windows (PowerShell)
 $env:HF_TOKEN="hf_your_token_here"
 ```
 
----
+## Cohere API Key Full Guide
 
-## 🟣 Getting Your Cohere API Key
-
-1. Go to https://dashboard.cohere.com and create a free account
-2. Visit https://dashboard.cohere.com/api-keys
-3. Click **"New Trial Key"** → copy it immediately
+1. Create a free account at https://dashboard.cohere.com
+2. Go to https://dashboard.cohere.com/api-keys
+3. Click **New Trial Key** and copy it immediately
 
 ```bash
 # Mac/Linux
 export COHERE_API_KEY="your_key_here"
 
 # Mac/Linux — permanent
-echo 'export COHERE_API_KEY="your_key_here"' >> ~/.zshrc
-source ~/.zshrc
+echo 'export COHERE_API_KEY="your_key_here"' >> ~/.zshrc && source ~/.zshrc
 
 # Windows (Command Prompt)
-set COHERE_API_KEY="your_key_here"
+set COHERE_API_KEY=your_key_here
 
 # Windows (PowerShell)
 $env:COHERE_API_KEY="your_key_here"
 ```
 
-> **Free tier limits:** 1,000 API calls/month — more than enough 
-> for learning and experimentation.
+> Free tier gives 1000 API calls per month which is more than enough for learning.
 
----
+## Use your own document
+
+```bash
+python rag50_ollama.py --file my_document.txt --query "Your question here"
+python rag50_ollama.py --file my_document.txt --query "Your question" --top-k 5
+```
+
+Works with any plain text file. Meeting notes, documentation, articles, books.
 
 ## Project Structure
 
 ```text
 tiny-rag/
-├── rag50_ollama.py        # local, no API key, fully private
-├── rag50_huggingface.py   # free cloud, local embeddings
-├── rag50_cohere.py        # free tier, easiest setup
-└── sample.txt             # demo document (Acme store policies)
+├── rag50_ollama.py        local inference, zero cost, fully private
+├── rag50_huggingface.py   free cloud generation, local embeddings
+├── rag50_cohere.py        free tier API, fastest setup
+├── sample.txt             demo document, Acme Store policy
+├── requirements_ollama.txt
+├── requirements_huggingface.txt
+├── requirements_cohere.txt
+├── .gitignore
+└── LICENSE
 ```
-
----
 
 ## Contributing
 
-Got a new provider? Keep it to **one file, under 70 lines,
-same 5-step structure** — and open a PR.
+Adding a new provider? Follow these rules and open a PR. One file only, no shared modules. Under 75 lines, comments included. Same 5-step structure: load, embed, similarity, retrieve, generate. Same CLI interface with `--file`, `--query`, `--top-k` flags. Good candidates: Gemini, Groq, Mistral, AWS Bedrock, Azure OpenAI.
+
+## License
+
+MIT. Use it, fork it, ship it.
+
+---
+
+<div align="center">
+<sub>If this helped you understand RAG, consider starring the repo</sub>
+</div>
