@@ -59,6 +59,51 @@ Every file implements the same 5 steps:
 
 ---
 
+## 🧪 Live Example — See RAG in Action
+
+Using the included `sample.txt` (Acme Store policy document):
+
+### Query 1 — Direct fact retrieval
+```bash
+python rag50_ollama.py --file sample.txt --query "What is the return policy?"
+```
+```
+📄 Loading & chunking document …
+🔢 Embedding 12 chunks …
+🔍 Retrieving relevant context …
+💬 Generating answer …
+
+Q: What is the return policy?
+A: You can return any unused item within 30 days of purchase for a full 
+   refund. Items must be in original packaging with all tags attached. 
+   Digital products and perishables are non-refundable.
+```
+
+### Query 2 — Multi-fact reasoning
+```bash
+python rag50_ollama.py --file sample.txt --query "How do I reach Gold status and what do I get?"
+```
+```
+Q: How do I reach Gold status and what do I get?
+A: Gold status is unlocked at 500 loyalty points (earned at $1 per point 
+   spent). Benefits include free expedited shipping on all orders.
+```
+
+### Query 3 — Hallucination guard (the important one)
+```bash
+python rag50_ollama.py --file sample.txt --query "Do you offer student discounts?"
+```
+```
+Q: Do you offer student discounts?
+A: I don't know.
+```
+
+> ☝️ **This is RAG working correctly.** The document doesn't mention 
+> student discounts, so the model refuses to guess. 
+> This is the core superpower of RAG over plain LLM prompting.
+
+---
+
 ## Quick Start
 
 ### Ollama (local, no API key)
@@ -85,6 +130,98 @@ pip install cohere numpy
 export COHERE_API_KEY="your_key"
 python rag50_cohere.py --file sample.txt --query "What is the return policy?"
 ```
+
+---
+
+## 🦙 Setting Up Ollama (Step by Step)
+
+### macOS
+```bash
+# Option 1 — Direct download
+# Visit https://ollama.com/download and download the macOS app
+
+# Option 2 — Homebrew
+brew install ollama
+```
+
+### Linux
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+### Windows
+```
+Visit https://ollama.com/download
+Download and run the OllamaSetup.exe installer
+```
+
+### After install — pull the models
+```bash
+# Pull embedding model (~274 MB)
+ollama pull nomic-embed-text
+
+# Pull LLM (~2 GB — grab a coffee)
+ollama pull llama3.2
+
+# Verify both are ready
+ollama list
+
+# Start the server (keep this terminal open)
+ollama serve
+```
+
+> **Note:** `ollama serve` must be running in the background whenever 
+> you run the script. On macOS, the desktop app handles this automatically.
+
+---
+
+## 🤗 Getting Your HuggingFace Token
+
+1. Go to https://huggingface.co/join and create a free account
+2. Visit https://huggingface.co/settings/tokens
+3. Click **"New token"** → name it anything → Role: **Read** → **Generate**
+4. Copy the token (starts with `hf_`)
+
+```bash
+# Mac/Linux — add to current session
+export HF_TOKEN="hf_your_token_here"
+
+# Mac/Linux — make it permanent (add to ~/.bashrc or ~/.zshrc)
+echo 'export HF_TOKEN="hf_your_token_here"' >> ~/.zshrc
+source ~/.zshrc
+
+# Windows (Command Prompt)
+set HF_TOKEN="hf_your_token_here"
+
+# Windows (PowerShell)
+$env:HF_TOKEN="hf_your_token_here"
+```
+
+---
+
+## 🟣 Getting Your Cohere API Key
+
+1. Go to https://dashboard.cohere.com and create a free account
+2. Visit https://dashboard.cohere.com/api-keys
+3. Click **"New Trial Key"** → copy it immediately
+
+```bash
+# Mac/Linux
+export COHERE_API_KEY="your_key_here"
+
+# Mac/Linux — permanent
+echo 'export COHERE_API_KEY="your_key_here"' >> ~/.zshrc
+source ~/.zshrc
+
+# Windows (Command Prompt)
+set COHERE_API_KEY="your_key_here"
+
+# Windows (PowerShell)
+$env:COHERE_API_KEY="your_key_here"
+```
+
+> **Free tier limits:** 1,000 API calls/month — more than enough 
+> for learning and experimentation.
 
 ---
 
