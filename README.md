@@ -31,25 +31,9 @@ Most RAG tutorials bury the concept under hundreds of lines of framework glue. T
 
 ## Architecture
 
-```
-your_doc.txt
-     |
-     v
-load_chunks()        splits into overlapping word windows
-     |
-     v
-embed()              converts text to float vectors
-     |
-     v
-[vectors in RAM]------------------------+
-                                        |
-user query                              |
-     |                                  |
-     v                                  v
-embed(query) -> cosine_similarity() -> retrieve() -> generate() -> answer
-```
+![RAG Pipeline Architecture](assets/architecture.png)
 
-5 functions. 1 file. 3 providers. Same pipeline every time.
+> 5 functions. 1 file. 3 providers. Same pipeline every time.
 
 ## Choose your provider
 
